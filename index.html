@@ -1,0 +1,181 @@
+<html>
+  <head>
+    <title>Video Summarizer</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="header-text">Video Summarizer</h1>
+
+      <div class="summary-video">
+        <p class="summary-text">
+          Summary video will be displayed here after summarization
+        </p>
+      </div>
+      <div class="video">
+        <p class="video-text">Click here to upload video</p>
+        <input class="video-input" type="file" name="file" id="file" />
+      </div>
+
+      <input
+        class="summarize-cta inactive"
+        type="submit"
+        value="Summarize Video"
+        name="submit"
+      />
+      <!-- 1 to 100 count down in 40 sec -->
+      <div id="countdown">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+  </body>
+  <script>
+    const videoInput = document.querySelector(".video-input");
+    const summarizeCta = document.querySelector(".summarize-cta");
+
+    videoInput.addEventListener("change", () => {
+      summarizeCta.classList.remove("inactive");
+    });
+
+    videoInput.addEventListener("change", function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const video = document.createElement("video");
+          video.src = e.target.result;
+          video.width = 300;
+          video.height = 200;
+          video.controls = true;
+          document.querySelector(".video").appendChild(video);
+          document.querySelector(".video-text").style.display = "none";
+          document.querySelector(".video-input").style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    summarizeCta.addEventListener("click", () => {
+      if (summarizeCta.classList.contains("inactive")) {
+        return;
+      }
+
+      summarizeCta.style.display = "none";
+      document.getElementById("countdown").style.display = "block";
+
+      var timeleft = 70;
+      var downloadTimer = setInterval(function () {
+        if (timeleft <= 0) {
+          clearInterval(downloadTimer);
+          document.getElementsByClassName("progress-bar")[0].innerHTML =
+            "Finished";
+          document.querySelector(".progress-bar").style.width = "100%";
+        } else {
+          document.querySelector(".progress-bar").style.width =
+            parseInt(100 - timeleft * 2.5) + "%";
+        }
+        timeleft -= 1;
+      }, 1000);
+
+      const file = videoInput.files[0];
+      const formData = new FormData();
+      formData.append("video", file);
+      fetch("http://localhost:8000/upload-video", {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          document.querySelector(".summary-video").style.display = "block";
+          document.querySelector(".summary-text").innerHTML = data.summary;
+
+          clearInterval(downloadTimer);
+          document.getElementsByClassName("progress-bar")[0].innerHTML =
+            "Finished";
+          document.querySelector(".progress-bar").style.width = "100%";
+
+          console.log(data);
+        });
+    });
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .header-text {
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .video {
+      width: 95%;
+      max-width: 400px;
+      height: 280px;
+      border-radius: 20px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgb(225, 225, 225);
+      margin-top: 20px;
+    }
+
+    .summary-video {
+      width: 95%;
+      max-width: 400px;
+      min-height: 280px;
+      border-radius: 20px;
+      position: relative;
+      background-color: rgb(225, 225, 225);
+      display: none;
+    }
+    .summary-text {
+      padding: 20px;
+    }
+    .video-input {
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      opacity: 0;
+    }
+    .video-text {
+      position: absolute;
+    }
+    .summarize-cta {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background-color: rgb(0, 0, 0);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .inactive {
+      opacity: 0.4;
+    }
+    #countdown {
+      width: 300px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 30px;
+      margin-top: 20px;
+      display: none;
+      background: rgb(240, 180, 255);
+      border-radius: 20px;
+    }
+    .progress-bar {
+      background-color: rgb(204, 0, 255);
+      border-radius: 20px;
+      height: 100%;
+      width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</html>
